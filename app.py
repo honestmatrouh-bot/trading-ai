@@ -14,83 +14,76 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================================================
-# 2. نظام تسجيل الدخول (Google Sheets Auth)
-# =========================================================
-SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
-
 def check_login():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        # 1. تنسيق البانر العلوي (تحكم في الارتفاع لتقليل الحجم العرضي)
+        # 1. تنسيق البانر (عرض كامل وارتفاع محدود جداً 3سم تقريباً)
         try:
             st.markdown(
                 """
                 <style>
-                .banner-container img {
+                .main-banner {
                     width: 100%;
-                    height: 200px; /* يمكنك تعديل الرقم لتقليل الارتفاع */
+                    height: 115px; /* ما يعادل 3 سم تقريباً على الشاشات */
                     object-fit: cover;
-                    border-radius: 15px;
+                    border-radius: 5px;
+                    margin-bottom: 10px;
+                }
+                .logo-img {
+                    display: block;
+                    margin-left: auto;
+                    margin-right: auto;
+                    width: 75px;  /* ما يعادل 2 سم تقريباً */
+                    height: 75px; /* ما يعادل 2 سم تقريباً */
+                    object-fit: contain;
                 }
                 </style>
                 """, unsafe_allow_html=True
             )
+            # عرض البانر
             st.image("pics/banner.jpg", use_container_width=True)
         except:
             pass
 
-        # 2. تنسيق اللوجو والعنوان في المنتصف
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        with col2:
-            try:
-                # تأكد أن اسم الملف في GitHub هو logo.jpeg (أو غيره حسب الملف المرفوع)
-                st.image("pics/logo.jpeg", width=130) 
-            except:
-                pass
-            st.markdown("<h2 style='text-align: center; margin-top: -10px;'>🔐 تسجيل الدخول</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: #888;'>EGX AI – Stock Assistant</p>", unsafe_allow_html=True)
+        # 2. عرض اللوجو تحت البانر مباشرة بحجم 2*2 سم
+        try:
+            # استخدام HTML للتحكم الدقيق في حجم اللوجو
+            st.markdown('<img src="app/static/pics/logo.jpeg" class="logo-img">', unsafe_allow_html=True)
+            # ملحوظة: إذا لم يظهر اللوجو بـ HTML استخدم سطر streamlit التالي:
+            # st.image("pics/logo.jpeg", width=75) 
+        except:
+            pass
 
-        # 3. نموذج الدخول (Form)
+        # عنوان الصفحة تحت اللوجو
+        st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
+
+        # 3. نموذج الدخول
         with st.form("login_form"):
-            u = st.text_input("Username (اسم المستخدم)")
-            p = st.text_input("Password (كلمة المرور)", type="password")
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
             submitted = st.form_submit_button("دخول للنظام", use_container_width=True)
             
             if submitted:
                 try:
-                    # قراءة البيانات من Google Sheets
                     df_u = pd.read_csv(SHEET_URL)
-                    
-                    # تنظيف البيانات من الفراغات لضمان مطابقة صحيحة
                     df_u['username'] = df_u['username'].astype(str).str.strip()
                     df_u['password'] = df_u['password'].astype(str).str.strip()
-                    
                     user_row = df_u[df_u['username'] == str(u).strip()]
                     
                     if not user_row.empty and str(user_row.iloc[0]['password']) == str(p).strip():
                         st.session_state['logged_in'] = True
                         st.session_state['role'] = user_row.iloc[0].get('role', 'User')
-                        st.success("✅ تم تسجيل الدخول بنجاح!")
                         st.rerun()
                     else:
                         st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
                 except Exception as e:
-                    st.error(f"⚠️ خطأ فني: يرجى التأكد من رفع ملف requirements.txt وتثبيت openpyxl")
-                    st.info(f"تفاصيل الخطأ: {e}")
+                    st.error("⚠️ تأكد من رفع ملف requirements.txt وتثبيت openpyxl")
         
-        # تذييل بسيط
-        st.markdown("<div style='text-align: center; font-size: 11px; color: gray; margin-top: 30px;'>Developed by Nader Al-Saed Shalaby</div>", unsafe_allow_html=True)
-        
-        # إيقاف تنفيذ باقي الكود حتى يتم تسجيل الدخول
         st.stop()
         return False
     return True
-
-# تفعيل نظام الحماية
-check_login()
 # =========================================================
 # 1. إعدادات الصفحة الأساسية
 # =========================================================
