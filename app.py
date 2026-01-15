@@ -7,7 +7,44 @@ import numpy as np
 from pathlib import Path
 
 import utils
+# =========================================================
+# 1. نظام تسجيل الدخول (Google Sheets Auth)
+# =========================================================
+# رابط ملف الاكسل المنشور بصيغة CSV (تأكد أنه نفس الرابط في صورتك)
+SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
 
+def check_login():
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    if not st.session_state['logged_in']:
+        st.set_page_config(page_title="Login | EGX AI", layout="centered")
+        st.title("🔐 تسجيل الدخول - EGX AI")
+        
+        with st.form("login_form"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("دخول")
+            
+            if submitted:
+                try:
+                    df_u = pd.read_csv(SHEET_URL)
+                    # تنظيف البيانات للتأكد من مطابقة النصوص
+                    user_row = df_u[df_u['username'].astype(str) == str(u)]
+                    if not user_row.empty and str(user_row.iloc[0]['password']) == str(p):
+                        st.session_state['logged_in'] = True
+                        st.session_state['role'] = user_row.iloc[0].get('role', 'User')
+                        st.rerun()
+                    else:
+                        st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
+                except Exception as e:
+                    st.error(f"⚠️ خطأ في الاتصال بقاعدة البيانات: {e}")
+        return False
+    return True
+
+# تفعيل نظام الدخول قبل تشغيل أي كود آخر
+if not check_login():
+    st.stop()
 # =========================
 # مسارات رئيسية
 # =========================
