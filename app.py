@@ -1,23 +1,76 @@
 # app.py
 # EGX AI – Stock Assistant
-
-import streamlit as st
-import pandas as pd
-import numpy as np
-from pathlib import Path
-
-import utils
-# =========================================================
-# 1. نظام تسجيل الدخول (Google Sheets Auth)
-# =========================================================
-# app.py
-# EGX AI – Stock Assistant
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import utils
+
+# =========================================================
+# 1. إعدادات الصفحة الأساسية (يجب أن تكون أول سطر Streamlit)
+# =========================================================
+st.set_page_config(
+    page_title="EGX AI – Stock Assistant",
+    layout="wide"
+)
+
+# =========================================================
+# 2. نظام تسجيل الدخول (Google Sheets Auth)
+# =========================================================
+SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
+
+def check_login():
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    if not st.session_state['logged_in']:
+        # --- إضافة البانر في الأعلى ---
+        try:
+            st.image("pics/banner.jpg", use_container_width=True)
+        except:
+            pass
+
+        # --- تنسيق اللوجو والعنوان ---
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            try:
+                st.image("pics/logo.jpeg", width=150) # تأكد من الامتداد .jpeg كما في الصورة
+            except:
+                pass
+            st.title("🔐 تسجيل الدخول - EGX AI")
+            st.write("برنامج التحليلات بالذكاء الصناعي لسوق البورصة المصرية")
+
+        # --- نموذج الدخول ---
+        with st.form("login_form"):
+            u = st.text_input("Username")
+            p = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("دخول", use_container_width=True)
+            
+            if submitted:
+                try:
+                    df_u = pd.read_csv(SHEET_URL)
+                    # معالجة البيانات لضمان عدم وجود فراغات
+                    df_u['username'] = df_u['username'].astype(str).str.strip()
+                    df_u['password'] = df_u['password'].astype(str).str.strip()
+                    
+                    user_row = df_u[df_u['username'] == str(u).strip()]
+                    
+                    if not user_row.empty and str(user_row.iloc[0]['password']) == str(p).strip():
+                        st.session_state['logged_in'] = True
+                        st.session_state['role'] = user_row.iloc[0].get('role', 'User')
+                        st.rerun()
+                    else:
+                        st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
+                except Exception as e:
+                    st.error(f"⚠️ خطأ في الاتصال بقاعدة البيانات: {e}")
+        
+        # منع ظهور أي شيء آخر في الصفحة إذا لم يسجل الدخول
+        st.stop() 
+        return False
+    return True
+
+# استدعاء الحماية
+check_login()
 # =========================================================
 # 1. إعدادات الصفحة الأساسية
 # =========================================================
