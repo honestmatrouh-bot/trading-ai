@@ -57,7 +57,7 @@ def check_login():
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
             try:
-                st.image("pics/logo.jpeg", width=75) # حجم 2 سم
+                st.image("pics/logo.jpg", width=75) # حجم 2 سم
             except: pass
             st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
 
