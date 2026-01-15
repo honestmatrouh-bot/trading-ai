@@ -36,7 +36,7 @@ def check_login():
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        st.title("🔐 تسجيل الدخول - EGX AI")
+        st.title("🔐 تسجيل الدخول - برنامج التحليلات باستخدام الذكاء الصناعى لسوق البرورصة المصرية")
         with st.form("login_form"):
             u = st.text_input("Username")
             p = st.text_input("Password", type="password")
