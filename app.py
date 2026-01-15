@@ -24,32 +24,47 @@ def check_login():
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        # --- إضافة البانر في الأعلى ---
+        # 1. تنسيق البانر العلوي (تحكم في الارتفاع لتقليل الحجم العرضي)
         try:
+            st.markdown(
+                """
+                <style>
+                .banner-container img {
+                    width: 100%;
+                    height: 200px; /* يمكنك تعديل الرقم لتقليل الارتفاع */
+                    object-fit: cover;
+                    border-radius: 15px;
+                }
+                </style>
+                """, unsafe_allow_html=True
+            )
             st.image("pics/banner.jpg", use_container_width=True)
         except:
             pass
 
-        # --- تنسيق اللوجو والعنوان ---
-        col1, col2, col3 = st.columns([1, 2, 1])
+        # 2. تنسيق اللوجو والعنوان في المنتصف
+        col1, col2, col3 = st.columns([1, 1.5, 1])
         with col2:
             try:
-                st.image("pics/logo.jpeg", width=150) # تأكد من الامتداد .jpeg كما في الصورة
+                # تأكد أن اسم الملف في GitHub هو logo.jpeg (أو غيره حسب الملف المرفوع)
+                st.image("pics/logo.jpeg", width=130) 
             except:
                 pass
-            st.title("🔐 تسجيل الدخول - EGX AI")
-            st.write("برنامج التحليلات بالذكاء الصناعي لسوق البورصة المصرية")
+            st.markdown("<h2 style='text-align: center; margin-top: -10px;'>🔐 تسجيل الدخول</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #888;'>EGX AI – Stock Assistant</p>", unsafe_allow_html=True)
 
-        # --- نموذج الدخول ---
+        # 3. نموذج الدخول (Form)
         with st.form("login_form"):
-            u = st.text_input("Username")
-            p = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("دخول", use_container_width=True)
+            u = st.text_input("Username (اسم المستخدم)")
+            p = st.text_input("Password (كلمة المرور)", type="password")
+            submitted = st.form_submit_button("دخول للنظام", use_container_width=True)
             
             if submitted:
                 try:
+                    # قراءة البيانات من Google Sheets
                     df_u = pd.read_csv(SHEET_URL)
-                    # معالجة البيانات لضمان عدم وجود فراغات
+                    
+                    # تنظيف البيانات من الفراغات لضمان مطابقة صحيحة
                     df_u['username'] = df_u['username'].astype(str).str.strip()
                     df_u['password'] = df_u['password'].astype(str).str.strip()
                     
@@ -58,18 +73,23 @@ def check_login():
                     if not user_row.empty and str(user_row.iloc[0]['password']) == str(p).strip():
                         st.session_state['logged_in'] = True
                         st.session_state['role'] = user_row.iloc[0].get('role', 'User')
+                        st.success("✅ تم تسجيل الدخول بنجاح!")
                         st.rerun()
                     else:
                         st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
                 except Exception as e:
-                    st.error(f"⚠️ خطأ في الاتصال بقاعدة البيانات: {e}")
+                    st.error(f"⚠️ خطأ فني: يرجى التأكد من رفع ملف requirements.txt وتثبيت openpyxl")
+                    st.info(f"تفاصيل الخطأ: {e}")
         
-        # منع ظهور أي شيء آخر في الصفحة إذا لم يسجل الدخول
-        st.stop() 
+        # تذييل بسيط
+        st.markdown("<div style='text-align: center; font-size: 11px; color: gray; margin-top: 30px;'>Developed by Nader Al-Saed Shalaby</div>", unsafe_allow_html=True)
+        
+        # إيقاف تنفيذ باقي الكود حتى يتم تسجيل الدخول
+        st.stop()
         return False
     return True
 
-# استدعاء الحماية
+# تفعيل نظام الحماية
 check_login()
 # =========================================================
 # 1. إعدادات الصفحة الأساسية
