@@ -1,5 +1,3 @@
-# app.py
-# EGX AI – Stock Assistant
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,59 +5,63 @@ from pathlib import Path
 import utils
 
 # =========================================================
-# 1. إعدادات الصفحة الأساسية (يجب أن تكون أول سطر Streamlit)
+# 1. إعدادات الصفحة الأساسية (يجب أن تكون أول سطر)
 # =========================================================
 st.set_page_config(
     page_title="EGX AI – Stock Assistant",
     layout="wide"
 )
 
+# رابط قاعدة بيانات المستخدمين (Google Sheets)
+SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
+
+# =========================================================
+# 2. نظام تسجيل الدخول وتنسيق الصور
+# =========================================================
 def check_login():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        # 1. تنسيق البانر (عرض كامل وارتفاع محدود جداً 3سم تقريباً)
+        # تنسيق البانر واللوجو بالقياسات المطلوبة (3سم و 2سم تقريباً)
+        st.markdown(
+            """
+            <style>
+            .main-banner {
+                width: 100%;
+                height: 115px; /* ارتفاع 3 سم تقريباً */
+                object-fit: cover;
+                border-radius: 10px;
+                margin-bottom: 20px;
+            }
+            .logo-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 10px;
+            }
+            .logo-img {
+                width: 75px; /* عرض 2 سم تقريباً */
+                height: 75px; /* ارتفاع 2 سم تقريباً */
+                object-fit: contain;
+            }
+            </style>
+            """, unsafe_allow_html=True
+        )
+
+        # عرض البانر
         try:
-            st.markdown(
-                """
-                <style>
-                .main-banner {
-                    width: 100%;
-                    height: 115px; /* ما يعادل 3 سم تقريباً على الشاشات */
-                    object-fit: cover;
-                    border-radius: 5px;
-                    margin-bottom: 10px;
-                }
-                .logo-img {
-                    display: block;
-                    margin-left: auto;
-                    margin-right: auto;
-                    width: 75px;  /* ما يعادل 2 سم تقريباً */
-                    height: 75px; /* ما يعادل 2 سم تقريباً */
-                    object-fit: contain;
-                }
-                </style>
-                """, unsafe_allow_html=True
-            )
-            # عرض البانر
             st.image("pics/banner.jpg", use_container_width=True)
-        except:
-            pass
+        except: pass
 
-        # 2. عرض اللوجو تحت البانر مباشرة بحجم 2*2 سم
-        try:
-            # استخدام HTML للتحكم الدقيق في حجم اللوجو
-            st.markdown('<img src="app/static/pics/logo.jpeg" class="logo-img">', unsafe_allow_html=True)
-            # ملحوظة: إذا لم يظهر اللوجو بـ HTML استخدم سطر streamlit التالي:
-            # st.image("pics/logo.jpeg", width=75) 
-        except:
-            pass
+        # عرض اللوجو تحت البانر في المنتصف
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            try:
+                st.image("pics/logo.jpeg", width=75) # حجم 2 سم
+            except: pass
+            st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
 
-        # عنوان الصفحة تحت اللوجو
-        st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
-
-        # 3. نموذج الدخول
+        # نموذج تسجيل الدخول
         with st.form("login_form"):
             u = st.text_input("Username")
             p = st.text_input("Password", type="password")
@@ -79,99 +81,62 @@ def check_login():
                     else:
                         st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
                 except Exception as e:
-                    st.error("⚠️ تأكد من رفع ملف requirements.txt وتثبيت openpyxl")
+                    st.error(f"⚠️ خطأ في الاتصال: تأكد من وجود مكتبة openpyxl")
         
-        st.stop()
-        return False
-    return True
-# =========================================================
-# 1. إعدادات الصفحة الأساسية
-# =========================================================
-st.set_page_config(
-    page_title="EGX AI – Stock Assistant",
-    layout="wide"
-)
-
-def check_login():
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-
-    if not st.session_state['logged_in']:
-        # 1. عرض البانر العريض في أعلى الصفحة
-        try:
-            st.image("pics/banner.jpg", use_container_width=True)
-        except:
-            pass # في حال عدم وجود الصورة لا يتوقف البرنامج
-
-        # 2. ترتيب اللوجو مع العنوان
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            try:
-                # عرض اللوجو في المنتصف
-                st.image("pics/logo.jpeg", width=150) 
-            except:
-                pass
-            st.markdown("<h2 style='text-align: center;'>🔐 تسجيل الدخول</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='text-align: center; color: gray;'>برنامج التحليلات بالذكاء الصناعي لسوق البورصة المصرية</p>", unsafe_allow_html=True)
-
-        # 3. نموذج تسجيل الدخول
-        with st.form("login_form"):
-            u = st.text_input("Username")
-            p = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("دخول", use_container_width=True)
-            
-            if submitted:
-                try:
-                    df_u = pd.read_csv(SHEET_URL)
-                    user_row = df_u[df_u['username'].astype(str) == str(u)]
-                    if not user_row.empty and str(user_row.iloc[0]['password']) == str(p):
-                        st.session_state['logged_in'] = True
-                        st.session_state['role'] = user_row.iloc[0].get('role', 'User')
-                        st.rerun()
-                    else:
-                        st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
-                except Exception as e:
-                    st.error(f"⚠️ خطأ في الاتصال بقاعدة البيانات: {e}")
-        
-        # تذييل الصفحة (اختياري)
-        st.markdown("<div style='text-align: center; font-size: 12px; color: gray; margin-top: 50px;'>Developed by Nader Al-Saed Shalaby</div>", unsafe_allow_html=True)
-        
+        st.stop() # يمنع ظهور باقي البرنامج حتى يسجل الدخول
         return False
     return True
 
+# استدعاء الحماية فوراً
+check_login()
+
 # =========================
-# 3. إعداد القائمة الجانبية والبيانات الشخصية
+# 3. مسارات رئيسية وتحميل البيانات
 # =========================
+BASE_DIR = Path(__file__).resolve().parent
+INTRADAY_DIR = BASE_DIR / "intraday"
+TRANSACTION_DIR = BASE_DIR / "transaction"
+
+def get_latest_file(folder: Path, pattern: str):
+    files = [f for f in folder.glob(pattern) if not f.name.startswith(("~$", "-$"))]
+    if not files: return None
+    files = sorted(files, key=lambda f: f.stat().st_mtime)
+    return files[-1]
+
+@st.cache_data(show_spinner=False)
+def load_daily_data():
+    intraday_path = get_latest_file(INTRADAY_DIR, "*.xlsx")
+    tx_path = get_latest_file(TRANSACTION_DIR, "*.csv")
+    df_intraday = utils.load_intraday(intraday_path) if intraday_path else None
+    df_tx = utils.load_transactions(tx_path) if tx_path else None
+    signals = None
+    if intraday_path and tx_path:
+        signals = utils.build_signals_for_day(intraday_path, tx_path)
+        signals = utils.apply_ai_score(signals)
+    return df_intraday, df_tx, signals, intraday_path, tx_path
+
+df_intraday, df_tx, signals, intraday_path, tx_path = load_daily_data()
+
+# =========================================================
+# 4. القائمة الجانبية (Sidebar)
+# =========================================================
 st.sidebar.title("EGX AI Navigation")
 page = st.sidebar.radio(
     "إختر صفحة",
-    [
-        "📊 Market Overview",
-        "📈 Technical View",
-        "📉 S/R Breakouts",
-        "🤖 AI Recommendations",
-        "📌 Group Picks Ranking",
-        "🧠 AI & News Analytics",
-    ]
+    ["📊 Market Overview", "📈 Technical View", "📉 S/R Breakouts", "🤖 AI Recommendations", "📌 Group Picks Ranking", "🧠 AI & News Analytics"]
 )
 
-# --- كود بياناتك الشخصية الجديد ---
+# عرض بيانات المطور في السايدبار
 st.sidebar.markdown("---")
 try:
-    # تأكد من وجود صورة باسم photo.jpg داخل مجلد اسمه pics في الـ GitHub عندك
     st.sidebar.image("pics/photo.jpg", use_container_width=True)
-except:
-    pass
+except: pass
 
 st.sidebar.markdown(f"""
 <div style="text-align: right; direction: rtl; border: 1px solid #444; padding: 10px; border-radius: 10px; background-color: #1e1e1e;">
-    <h3 style="margin-bottom:0; font-size: 16px; color: #ffffff;">تطوير | Developed by:</h3>
-    <p style="color: #ff4b4b; font-weight: bold; font-size: 18px; margin-top:0;">Nader Al-Saed Shalaby</p>
-    <p style="font-size: 13px; margin-bottom:5px; color: #cccccc;">🔹 <b>Investment Manager (EGX)</b></p>
-    <p style="font-size: 13px; margin-bottom:5px; color: #cccccc;">🔹 <b>AI Trading Systems Developer</b></p>
-    <p style="font-size: 13px; margin-bottom:10px; color: #cccccc;">🔹 <b>Data Analyst & Quant Researcher</b></p>
-    <p style="font-size: 13px; color: #ffffff;">📞 هاتف: <a href="tel:01016675600" style="color: #4CAF50;">01016675600</a></p>
-    <p style="font-size: 13px;"><a href="https://www.linkedin.com/in/YOUR_PROFILE" target="_blank" style="color: #00a0dc;">🔗 LinkedIn Profile | لينكدإن</a></p>
+    <p style="color: #ff4b4b; font-weight: bold; font-size: 16px; margin:0;">Nader Al-Saed Shalaby</p>
+    <p style="font-size: 12px; color: #ccc; margin:0;">Investment Manager (EGX)</p>
+    <p style="font-size: 12px; color: #4CAF50; margin:0;">📞 01016675600</p>
 </div>
 """, unsafe_allow_html=True)
 
