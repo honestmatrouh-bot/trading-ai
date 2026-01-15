@@ -18,9 +18,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import utils
-
 # =========================================================
-# 1. إعدادات الصفحة (يجب أن يكون أول أمر برمجي)
+# 1. إعدادات الصفحة الأساسية
 # =========================================================
 st.set_page_config(
     page_title="EGX AI – Stock Assistant",
@@ -58,7 +57,6 @@ def check_login():
         return False
     return True
 
-# منع تشغيل الكود إلا بعد تسجيل الدخول
 if not check_login():
     st.stop()
 
