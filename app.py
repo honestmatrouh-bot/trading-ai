@@ -26,21 +26,33 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================================================
-# 2. نظام تسجيل الدخول (Google Sheets Auth)
-# =========================================================
-SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
-
 def check_login():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        st.title("🔐 تسجيل الدخول - برنامج التحليلات باستخدام الذكاء الصناعى لسوق البرورصة المصرية")
+        # 1. عرض البانر العريض في أعلى الصفحة
+        try:
+            st.image("pics/banner.jpg", use_container_width=True)
+        except:
+            pass # في حال عدم وجود الصورة لا يتوقف البرنامج
+
+        # 2. ترتيب اللوجو مع العنوان
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            try:
+                # عرض اللوجو في المنتصف
+                st.image("pics/logo.jpeg", width=150) 
+            except:
+                pass
+            st.markdown("<h2 style='text-align: center;'>🔐 تسجيل الدخول</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: gray;'>برنامج التحليلات بالذكاء الصناعي لسوق البورصة المصرية</p>", unsafe_allow_html=True)
+
+        # 3. نموذج تسجيل الدخول
         with st.form("login_form"):
             u = st.text_input("Username")
             p = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("دخول")
+            submitted = st.form_submit_button("دخول", use_container_width=True)
             
             if submitted:
                 try:
@@ -54,11 +66,12 @@ def check_login():
                         st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
                 except Exception as e:
                     st.error(f"⚠️ خطأ في الاتصال بقاعدة البيانات: {e}")
+        
+        # تذييل الصفحة (اختياري)
+        st.markdown("<div style='text-align: center; font-size: 12px; color: gray; margin-top: 50px;'>Developed by Nader Al-Saed Shalaby</div>", unsafe_allow_html=True)
+        
         return False
     return True
-
-if not check_login():
-    st.stop()
 
 # =========================
 # 3. إعداد القائمة الجانبية والبيانات الشخصية
