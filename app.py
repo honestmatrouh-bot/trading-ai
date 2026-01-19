@@ -12,92 +12,76 @@ st.set_page_config(
     layout="wide"
 )
 
-# رابط قاعدة بيانات المستخدمين (Google Sheets)
-SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3C5XF45Cl-a8w_msij3UsPCBiyP6XRQ6GbhN1-01wT3lq-Bw2CL5bYc9ZBQTcHKQnk_g6KsqPKYaZ/pub?output=csv"
-
 # =========================================================
-# 2. نظام تسجيل الدخول وتنسيق الصور
+# 2. نظام تسجيل الدخول المحسن (Multi-user Secrets)
 # =========================================================
 def check_login():
+    """نظام التحقق من المستخدمين عبر Secrets"""
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        # تنسيق البانر واللوجو بالقياسات المطلوبة (3سم و 2سم تقريباً)
+        # تنسيق الواجهة (CSS)
         st.markdown(
             """
             <style>
-            .main-banner {
-                width: 100%;
-                height: 115px; /* ارتفاع 3 سم تقريباً */
-                object-fit: cover;
-                border-radius: 10px;
-                margin-bottom: 20px;
-            }
-            .logo-container {
-                display: flex;
-                justify-content: center;
-                margin-bottom: 10px;
-            }
-            .logo-img {
-                width: 75px; /* عرض 2 سم تقريباً */
-                height: 75px; /* ارتفاع 2 سم تقريباً */
-                object-fit: contain;
-            }
+            .main-banner { width: 100%; height: 115px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; }
             </style>
             """, unsafe_allow_html=True
         )
 
-        # عرض البانر
-        try:
-            st.image("pics/banner.jpg", use_container_width=True)
+        # عرض البانر واللوجو
+        try: st.image("pics/banner.jpg", use_container_width=True)
         except: pass
 
-        # عرض اللوجو تحت البانر في المنتصف
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            try:
-                st.image("pics/logo.jpg", width=75) # حجم 2 سم
+            try: st.image("pics/logo.jpg", width=75)
             except: pass
             st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
 
         # نموذج تسجيل الدخول
         with st.form("login_form"):
-            u = st.text_input("Username")
-            p = st.text_input("Password", type="password")
+            u = st.text_input("Username | اسم المستخدم")
+            p = st.text_input("Password | كلمة السر", type="password")
             submitted = st.form_submit_button("دخول للنظام", use_container_width=True)
             
             if submitted:
-                try:
-                    df_u = pd.read_csv(SHEET_URL)
-                    df_u['username'] = df_u['username'].astype(str).str.strip()
-                    df_u['password'] = df_u['password'].astype(str).str.strip()
-                    user_row = df_u[df_u['username'] == str(u).strip()]
+                # التحقق من القائمة الموجودة في Secrets
+                if "users" in st.secrets:
+                    all_users = st.secrets["users"]
+                    found = next((user for user in all_users if user["username"] == u.strip() 
+                                  and user["password"] == p.strip()), None)
                     
-                    if not user_row.empty and str(user_row.iloc[0]['password']) == str(p).strip():
-                        st.session_state['logged_in'] = True
-                        st.session_state['role'] = user_row.iloc[0].get('role', 'User')
-                        st.rerun()
+                    if found:
+                        if found["status"] == "active":
+                            st.session_state['logged_in'] = True
+                            st.session_state['current_user'] = u
+                            st.session_state['role'] = found.get('role', 'User')
+                            st.rerun()
+                        else:
+                            st.error("❌ الاشتراك منتهي. تواصل مع الإدارة للتجديد.")
                     else:
                         st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
-                except Exception as e:
-                    st.error(f"⚠️ خطأ في الاتصال: تأكد من وجود مكتبة openpyxl")
+                else:
+                    st.error("⚠️ خطأ في تهيئة النظام: قائمة المستخدمين غير موجودة.")
         
-        st.stop() # يمنع ظهور باقي البرنامج حتى يسجل الدخول
+        st.stop()
         return False
     return True
 
 # استدعاء الحماية فوراً
 check_login()
 
-# =========================
+# =========================================================
 # 3. مسارات رئيسية وتحميل البيانات
-# =========================
+# =========================================================
 BASE_DIR = Path(__file__).resolve().parent
 INTRADAY_DIR = BASE_DIR / "intraday"
 TRANSACTION_DIR = BASE_DIR / "transaction"
 
 def get_latest_file(folder: Path, pattern: str):
+    if not folder.exists(): return None
     files = [f for f in folder.glob(pattern) if not f.name.startswith(("~$", "-$"))]
     if not files: return None
     files = sorted(files, key=lambda f: f.stat().st_mtime)
