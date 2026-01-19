@@ -5,7 +5,7 @@ from pathlib import Path
 import utils
 
 # =========================================================
-# 1. إعدادات الصفحة الأساسية (يجب أن تكون أول سطر)
+# 1. إعدادات الصفحة الأساسية
 # =========================================================
 st.set_page_config(
     page_title="EGX AI – Stock Assistant",
@@ -13,69 +13,85 @@ st.set_page_config(
 )
 
 # =========================================================
-# 2. نظام تسجيل الدخول المحسن (Multi-user Secrets)
+# 2. نظام تسجيل الدخول المحسن (تكبير اللوجو + بيانات المطور)
 # =========================================================
 def check_login():
-    """نظام التحقق من المستخدمين عبر Secrets"""
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if not st.session_state['logged_in']:
-        # تنسيق الواجهة (CSS)
+        # تنسيق الواجهة
         st.markdown(
             """
             <style>
-            .main-banner { width: 100%; height: 115px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; }
+            .developer-info {
+                text-align: center;
+                background-color: #f0f2f6;
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 20px;
+                border: 1px solid #d1d5db;
+                color: #31333F;
+            }
             </style>
             """, unsafe_allow_html=True
         )
 
-        # عرض البانر واللوجو
+        # عرض البانر
         try: st.image("pics/banner.jpg", use_container_width=True)
         except: pass
 
-        col1, col2, col3 = st.columns([1, 1, 1])
+        # عرض اللوجو (تم تكبيره إلى 180 بكسل ليكون واضحاً)
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            try: st.image("pics/logo.jpg", width=75)
+            try: 
+                st.image("pics/logo.jpg", width=180) 
             except: pass
-            st.markdown("<h3 style='text-align: center;'>🔐 تسجيل الدخول</h3>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center;'>🔐 تسجيل الدخول</h2>", unsafe_allow_html=True)
 
-        # نموذج تسجيل الدخول
-        with st.form("login_form"):
-            u = st.text_input("Username | اسم المستخدم")
-            p = st.text_input("Password | كلمة السر", type="password")
-            submitted = st.form_submit_button("دخول للنظام", use_container_width=True)
-            
-            if submitted:
-                # التحقق من القائمة الموجودة في Secrets
-                if "users" in st.secrets:
-                    all_users = st.secrets["users"]
-                    found = next((user for user in all_users if user["username"] == u.strip() 
-                                  and user["password"] == p.strip()), None)
-                    
-                    if found:
-                        if found["status"] == "active":
-                            st.session_state['logged_in'] = True
-                            st.session_state['current_user'] = u
-                            st.session_state['role'] = found.get('role', 'User')
-                            st.rerun()
+            # نموذج تسجيل الدخول
+            with st.form("login_form"):
+                u = st.text_input("Username | اسم المستخدم")
+                p = st.text_input("Password | كلمة السر", type="password")
+                submitted = st.form_submit_button("دخول للنظام", use_container_width=True)
+                
+                if submitted:
+                    if "users" in st.secrets:
+                        all_users = st.secrets["users"]
+                        found = next((user for user in all_users if user["username"] == u.strip() 
+                                      and user["password"] == p.strip()), None)
+                        
+                        if found:
+                            if found["status"] == "active":
+                                st.session_state['logged_in'] = True
+                                st.session_state['current_user'] = u
+                                st.rerun()
+                            else:
+                                st.error("❌ الاشتراك منتهي. تواصل مع الإدارة.")
                         else:
-                            st.error("❌ الاشتراك منتهي. تواصل مع الإدارة للتجديد.")
-                    else:
-                        st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة")
-                else:
-                    st.error("⚠️ خطأ في تهيئة النظام: قائمة المستخدمين غير موجودة.")
+                            st.error("❌ بيانات الدخول غير صحيحة")
+            
+            # إضافة بياناتك الشخصية أسفل الفورم
+            st.markdown(
+                """
+                <div class="developer-info">
+                    <p style="margin:0; font-weight: bold; font-size: 18px;">تم إعداد النموذج بواسطة / نادر شلبي</p>
+                    <p style="margin:5px 0;">محلل بيانات ومبرمج ذكاء اصطناعي</p>
+                    <p style="margin:0; color: #ff4b4b; font-weight: bold;">📞 تليفون / 01016675600</p>
+                </div>
+                """, unsafe_allow_html=True
+            )
         
         st.stop()
         return False
     return True
 
-# استدعاء الحماية فوراً
+# استدعاء الحماية
 check_login()
 
-# =========================================================
-# 3. مسارات رئيسية وتحميل البيانات
-# =========================================================
+# =========================
+# 3. تحميل البيانات (كما هي في كودك)
+# =========================
 BASE_DIR = Path(__file__).resolve().parent
 INTRADAY_DIR = BASE_DIR / "intraday"
 TRANSACTION_DIR = BASE_DIR / "transaction"
@@ -102,7 +118,7 @@ def load_daily_data():
 df_intraday, df_tx, signals, intraday_path, tx_path = load_daily_data()
 
 # =========================================================
-# 4. القائمة الجانبية (Sidebar)
+# 4. القائمة الجانبية (Sidebar) + زر تسجيل الخروج
 # =========================================================
 st.sidebar.title("EGX AI Navigation")
 page = st.sidebar.radio(
@@ -110,10 +126,15 @@ page = st.sidebar.radio(
     ["📊 Market Overview", "📈 Technical View", "📉 S/R Breakouts", "🤖 AI Recommendations", "📌 Group Picks Ranking", "🧠 AI & News Analytics"]
 )
 
-# عرض بيانات المطور في السايدبار
 st.sidebar.markdown("---")
-try:
-    st.sidebar.image("pics/photo.jpg", use_container_width=True)
+# عرض اسم المستخدم الحالي وزر الخروج
+st.sidebar.write(f"👤 مرحباً: **{st.session_state.get('current_user', 'User')}**")
+if st.sidebar.button("Logout | تسجيل الخروج", use_container_width=True):
+    st.session_state['logged_in'] = False
+    st.rerun()
+
+st.sidebar.markdown("---")
+try: st.sidebar.image("pics/photo.jpg", use_container_width=True)
 except: pass
 
 st.sidebar.markdown(f"""
@@ -124,39 +145,7 @@ st.sidebar.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# =========================
-# 4. مسارات البيانات وتحميلها
-# =========================
-BASE_DIR = Path(__file__).resolve().parent
-INTRADAY_DIR = BASE_DIR / "intraday"
-TRANSACTION_DIR = BASE_DIR / "transaction"
-
-def get_latest_file(folder: Path, pattern: str):
-    files = [f for f in folder.glob(pattern) if not f.name.startswith(("~$", "-$"))]
-    if not files: return None
-    files = sorted(files, key=lambda f: f.stat().st_mtime)
-    return files[-1]
-
-@st.cache_data(show_spinner=False)
-def load_daily_data():
-    intraday_path = get_latest_file(INTRADAY_DIR, "*.xlsx")
-    tx_path = get_latest_file(TRANSACTION_DIR, "*.csv")
-    df_intraday = utils.load_intraday(intraday_path) if intraday_path else None
-    df_tx = utils.load_transactions(tx_path) if tx_path else None
-    signals = None
-    if intraday_path and tx_path:
-        signals = utils.build_signals_for_day(intraday_path, tx_path)
-        signals = utils.apply_ai_score(signals)
-    return df_intraday, df_tx, signals, intraday_path, tx_path
-
-df_intraday, df_tx, signals, intraday_path, tx_path = load_daily_data()
-
-# عرض الحالة في الـ sidebar تحت بياناتك
-if intraday_path: st.sidebar.success(f"Intraday: {intraday_path.name}")
-else: st.sidebar.error("لا يوجد ملف Intraday متاح.")
-
-if tx_path: st.sidebar.success(f"Transactions: {tx_path.name}")
-else: st.sidebar.error("لا يوجد ملف Transactions متاح.")
+# استكمال باقي محتوى الصفحات (Logic)
 
 # =========================================================
 # 📊 صفحة Market Overview
